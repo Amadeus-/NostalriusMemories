@@ -54,12 +54,32 @@ public class WorldSession {
 		this.realm = realm;
 	}
 
+	public void SendSerializedPacket(String serialized) {
+		String[] parts = serialized.split("\\|");
+		String[] header= parts[0].split(":");
+		String[] body  = parts[1].split(" ");
+		if (header.length != 2) {
+			Logger.writeLog("Wrong packet header: \"" + parts[0] + "\"", Logger.LOG_TYPE_ERROR);
+		}
+		ServerPacket pkt = new ServerPacket("Nopenope", Integer.parseInt(header[1]));
+		pkt.nOpcode = (short) Integer.parseInt(header[0]);
+		for (String b: body) {
+			int value = Integer.parseInt(b);
+			if (value > 0xFF)
+				break;
+			if (value > 0x7F) // Negative
+				value -= 0xFF;
+			pkt.put((byte)value);
+		}
+		connection.sendRaw(pkt);
+	}
+
 	/**
 	 * Send the character list to the client.
 	 */
 	public void sendCharacters() {
-		Logger.writeLog("sending chars", Logger.LOG_TYPE_VERBOSE);
-		connection.send(new SMSG_CHAR_ENUM(connection.getClient()));
+		Logger.writeLog("Sending chars", Logger.LOG_TYPE_VERBOSE);
+		SendSerializedPacket("59:168|1 175 145 4 0 0 0 0 0 82 101 109 101 109 98 101 114 0 1 5 0 3 9 6 2 0 1 12 0 0 0 0 0 0 0 205 215 11 198 53 126 4 195 249 15 167 66 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 216 38 0 0 4 135 49 0 0 20 0 0 0 0 0 217 38 0 0 7 218 38 0 0 8 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 74 20 0 0 21 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 256");
 	}
 
 	/**

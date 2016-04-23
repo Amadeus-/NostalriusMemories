@@ -177,6 +177,12 @@ public class WorldConnection extends Connection{
     	p.position(0);
         return super.sendPacket(p);
     }
+
+    public boolean sendRaw(ServerPacket p){
+    	p.setHeader(encode(p.size, p.nOpcode));
+    	p.position(0);
+        return super.sendPacket(p);
+    }
     
     /**
      * Encodes and also encrypts if the crypt has been initialized
