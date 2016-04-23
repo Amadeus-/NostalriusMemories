@@ -3,11 +3,18 @@ package bunnyEmu.main;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -25,13 +32,14 @@ import bunnyEmu.main.handlers.RealmHandler;
 import bunnyEmu.main.utils.PacketLog;
 import bunnyEmu.main.utils.PacketLog.PacketType;
 
-public class ServerWindow {
+public class ServerWindow implements ActionListener {
 
 	private JFrame frame;
 	private static JTextArea textArea;
+	private static JButton replayButton;
 	private static String[][] packets;
 	private static Packet[] packetLog;
-	
+
 	private static JTable table;
 	final static String[] headers = new String[] {"Name", "Opcode", "Size" };
 	static ArrayList<PacketType> packetLogTypes = new ArrayList<PacketType>();
@@ -52,23 +60,23 @@ public class ServerWindow {
 			}
 		});
 	}
-	
+
 	public static void notifyChange(){
 		// A new packet has been logged, do we want to see them?
 		packetLog = PacketLog.getPackets(packetLogTypes);
 		packets = new String[packetLog.length][3];
-		
+
 		for(int i = 0; i < packets.length; i++){
 			Packet p = packetLog[i];
 			packets[i][0] = p.sOpcode;
 			packets[i][1] = String.valueOf(Integer.toHexString(p.nOpcode).toUpperCase());
 			packets[i][2] = String.valueOf(p.size);
 		}
-			
+
 		table.setModel(new DefaultTableModel(packets, headers));
 		table.getColumnModel().getColumn(0).setPreferredWidth(220);
 	}
-	
+
 	/**
 	 * Create the application.
 	 */
@@ -81,51 +89,58 @@ public class ServerWindow {
 	 */
 	private void initialize() {
 		frame = new JFrame();
+		frame.setTitle("Nostalrius Memories");
 		frame.setBounds(100, 100, 596, 319);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
-		
-		JLabel lblBunnyEmu = new JLabel("BunnyEmu");
+
+		JLabel lblBunnyEmu = new JLabel("Nostalrius Memories - Based on BunnyEmu");
 		lblBunnyEmu.setToolTipText("");
-		lblBunnyEmu.setBounds(10, 10, 97, 14);
+		lblBunnyEmu.setBounds(10, 10, 207, 14);
 		frame.getContentPane().add(lblBunnyEmu);
-		
+
 		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 		tabbedPane.setBounds(10, 35, 560, 235);
 		frame.getContentPane().add(tabbedPane);
-		
+
+		/// Output
 		JPanel outputPanel = new JPanel();
 		outputPanel.setToolTipText("");
-		tabbedPane.addTab("Output", null, outputPanel, null);
-		
+		tabbedPane.addTab("Memories", null, outputPanel, null);
+
 		textArea = new JTextArea();
 		textArea.setFont(new Font("Tahoma", Font.PLAIN, 11));
 		textArea.setColumns(65);
 		textArea.setRows(14);
 		outputPanel.add(textArea);
-		
+
+		replayButton = new JButton("Replay...");
+		replayButton.addActionListener(this);
+		outputPanel.add(replayButton);
+
 		DefaultCaret caret = (DefaultCaret)textArea.getCaret();
 		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
-		
+
 		JScrollPane scroll = new JScrollPane (textArea);
 		outputPanel.add(scroll);
-		
+
+		/// Packets
 		JPanel packetPanel = new JPanel();
 		tabbedPane.addTab("Packets", null, packetPanel, null);
-		
+
 		packets = new String[0][3];
-		
-		
-		
+
+
+
 		table = new JTable(packets, headers);
 		table.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				int rowIndex = table.getSelectedRow();
-				
+
 				JFrame packetFrame = new JFrame();
 				packetFrame.setBounds(100, 100, 350, 300);
-				
+
 				JTextArea textArea = new JTextArea();
 				textArea.setFont(new Font("Tahoma", Font.PLAIN, 11));
 				textArea.setColumns(35);
@@ -133,21 +148,21 @@ public class ServerWindow {
 				textArea.append(packetLog[rowIndex].toStringBeautified());
 				JScrollPane scroll = new JScrollPane (textArea);
 				packetFrame.getContentPane().add(scroll);
-				
+
 				packetFrame.setVisible(true);
 			}
 		});
 		packetPanel.setLayout(null);
-		
-		
+
+
 		JScrollPane scroll2 = new JScrollPane (table);
 		scroll2.setBounds(155, 0, 400, 207);
 		scroll2.setPreferredSize(new Dimension(400, 200));
 		packetPanel.add(scroll2);
-		
+
 		table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		
+
 		final JCheckBox checkboxServer = new JCheckBox("Server");
 		checkboxServer.addMouseListener(new MouseAdapter() {
 			@Override
@@ -158,7 +173,7 @@ public class ServerWindow {
 		checkboxServer.setBounds(6, 36, 97, 23);
 		checkboxServer.setHorizontalAlignment(SwingConstants.LEFT);
 		packetPanel.add(checkboxServer);
-		
+
 		final JCheckBox checkboxClientImpl = new JCheckBox("Client implemented");
 		checkboxClientImpl.addMouseListener(new MouseAdapter() {
 			@Override
@@ -169,7 +184,7 @@ public class ServerWindow {
 		checkboxClientImpl.setHorizontalAlignment(SwingConstants.LEFT);
 		checkboxClientImpl.setBounds(6, 62, 127, 23);
 		packetPanel.add(checkboxClientImpl);
-		
+
 		final JCheckBox checkboxClientUnimpl = new JCheckBox("Client unimplemented");
 		checkboxClientUnimpl.addMouseListener(new MouseAdapter() {
 			@Override
@@ -180,7 +195,7 @@ public class ServerWindow {
 		checkboxClientUnimpl.setHorizontalAlignment(SwingConstants.LEFT);
 		checkboxClientUnimpl.setBounds(6, 88, 143, 23);
 		packetPanel.add(checkboxClientUnimpl);
-		
+
 		final JCheckBox checkboxClientUnk = new JCheckBox("Client unknown");
 		checkboxClientUnk.addMouseListener(new MouseAdapter() {
 			@Override
@@ -191,37 +206,37 @@ public class ServerWindow {
 		checkboxClientUnk.setHorizontalAlignment(SwingConstants.LEFT);
 		checkboxClientUnk.setBounds(6, 114, 127, 23);
 		packetPanel.add(checkboxClientUnk);
-		
+
 		JPanel infoPanel = new JPanel();
 		tabbedPane.addTab("Info", null, infoPanel, null);
 		infoPanel.setLayout(null);
-		
+
 		final JLabel memoryLabel = new JLabel("Memory usage:");
 		memoryLabel.setBounds(30, 11, 195, 22);
 		infoPanel.add(memoryLabel);
-		
+
 		final JLabel clientsLabel = new JLabel("Clients logged in:");
 		clientsLabel.setBounds(30, 66, 195, 22);
 		infoPanel.add(clientsLabel);
-		
+
 		commandPanel = new JPanel();
 		JTextArea commandArea = new JTextArea();
 		commandArea.setFont(new Font("Tahoma", Font.PLAIN, 11));
 		commandArea.setColumns(65);
 		commandArea.setRows(14);
-		
+
 		DefaultCaret caret2 = (DefaultCaret)commandArea.getCaret();
 		caret2.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
-		
+
 		JScrollPane scroll3 = new JScrollPane (commandArea);
 		commandPanel.add(scroll3);
 		tabbedPane.addTab("Command", null, commandPanel, null);
-		
+
 		/* console commands are handled by this thread */
 		Runnable loggerRunnable = new ConsoleLoggerGUI(commandArea);
 		Thread loggerThread = new Thread(loggerRunnable);
 		loggerThread.start();
-		
+
 		new Thread(){
 			@Override
 			public void run(){
@@ -237,7 +252,7 @@ public class ServerWindow {
 			}
 		}.start();
 	}
-	
+
 	private static void setPacketLogOption(PacketType type, boolean checked){
 		if(checked && !packetLogTypes.contains(type))
 			packetLogTypes.add(type);
@@ -245,9 +260,29 @@ public class ServerWindow {
 			packetLogTypes.remove(type);
 		notifyChange();
 	}
-	
+
 	public static void appendOut(String text){
 		if(textArea != null)
 			textArea.append(text + "\n");
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent arg0) {
+		JFileChooser fileChooser = new JFileChooser();
+		String path = ServerWindow.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+		try {
+			String decodedPath = URLDecoder.decode(path, "UTF-8");
+			fileChooser.setCurrentDirectory(new File(decodedPath));
+			int result = fileChooser.showOpenDialog(frame);
+			if (result == JFileChooser.APPROVE_OPTION) {
+			    File selectedFile = fileChooser.getSelectedFile();
+			    appendOut("Loading replay: " + selectedFile.getAbsolutePath());
+			    Server.startReplay(selectedFile);
+			}
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return;
+		}
 	}
 }
