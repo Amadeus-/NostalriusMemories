@@ -26,8 +26,6 @@ import bunnyEmu.main.net.packets.client.CMSG_MESSAGECHAT;
 import bunnyEmu.main.net.packets.client.CMSG_MOVEMENT;
 import bunnyEmu.main.net.packets.client.CMSG_PLAYER_LOGIN;
 import bunnyEmu.main.utils.Opcodes;
-import bunnyEmu.main.utils.PacketLog;
-import bunnyEmu.main.utils.PacketLog.PacketType;
 import misc.Logger;
 
 /**
@@ -78,7 +76,6 @@ public class WorldConnection extends Connection{
 
                 if(p.sOpcode == null){
                     Logger.writeLog("Received unknown packet: " + p.toString(), Logger.LOG_TYPE_WARNING);
-                    PacketLog.logPacket(PacketType.CLIENT_UNKNOWN, p);
                     continue;
                 }
 
@@ -95,10 +92,8 @@ public class WorldConnection extends Connection{
                         e.printStackTrace();
                     }
                     Logger.writeLog("Received known packet with implementation: " + p.toString(), Logger.LOG_TYPE_WARNING);
-                    PacketLog.logPacket(PacketType.CLIENT_KNOWN_IMPLEMENTED, p);
                 } catch (Exception e){
                     Logger.writeLog("Received known packet without implementation: " + p.toString(), Logger.LOG_TYPE_WARNING);
-                    PacketLog.logPacket(PacketType.CLIENT_KNOWN_UNIMPLEMENTED, p);
                 }
                 lock.lock();
                 switch(p.sOpcode) {

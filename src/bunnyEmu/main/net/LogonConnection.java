@@ -11,16 +11,14 @@ import java.nio.ByteBuffer;
 import bunnyEmu.main.entities.packet.ClientPacket;
 import bunnyEmu.main.entities.packet.Packet;
 import bunnyEmu.main.logon.LogonAuth;
-import bunnyEmu.main.utils.PacketLog;
-import bunnyEmu.main.utils.PacketLog.PacketType;
 import misc.Logger;
 
 /**
  * Establish the first connection between server and client, handles client
  * packets for all WoW versions.
- * 
+ *
  * @author Marijn
- * 
+ *
  */
 public class LogonConnection extends Connection {
 
@@ -48,7 +46,6 @@ public class LogonConnection extends Connection {
 					continue;
 
 				Logger.writeLog("Got auth packet: " + p.toString(), Logger.LOG_TYPE_VERBOSE);
-				PacketLog.logPacket(PacketType.CLIENT_KNOWN_IMPLEMENTED, p);
 
 				switch (p.nOpcode) {
 				case CLIENT_LOGON_CHALLENGE:

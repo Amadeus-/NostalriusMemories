@@ -7,13 +7,11 @@ import java.net.Socket;
 
 import bunnyEmu.main.entities.Client;
 import bunnyEmu.main.entities.packet.Packet;
-import bunnyEmu.main.utils.PacketLog;
-import bunnyEmu.main.utils.PacketLog.PacketType;
 import misc.Logger;
 
 /**
- * A connection made between the server and client, 
- * 
+ * A connection made between the server and client,
+ *
  * @author Marijn
  */
 public abstract class Connection extends Thread {
@@ -25,7 +23,7 @@ public abstract class Connection extends Thread {
 
 	/**
 	 * Create a new connection attached based on the given socket
-	 * 
+	 *
 	 * @param clientSocket The socket the client connected on.
 	 */
 	public Connection(Socket clientSocket) {
@@ -35,7 +33,7 @@ public abstract class Connection extends Thread {
 
 	private void initialize() {
 		System.out.println("Created Connection.");
-		
+
 		try {
 			out = new PrintWriter(clientSocket.getOutputStream(), true);
 			in = new DataInputStream(clientSocket.getInputStream());
@@ -43,7 +41,7 @@ public abstract class Connection extends Thread {
 			Logger.writeLog("Couldn't create input and output streams.", Logger.LOG_TYPE_WARNING);
 		}
 	}
-	
+
 	public void close() {
 		try {
 			//data.allConnections.remove(this);
@@ -57,9 +55,9 @@ public abstract class Connection extends Thread {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param p The sent packet
-	 * 
+	 *
 	 * @return True if successful, false if the actual capacity exceeds the given size
 	 */
 	protected boolean sendPacket(Packet p) {
@@ -68,10 +66,9 @@ public abstract class Connection extends Thread {
 			errorMessage += "Packet Error: The size of the packer (" + p.size;
 			errorMessage += ") is less than the total capacity (" + p.packet.capacity() +").";
 			Logger.writeLog(errorMessage, Logger.LOG_TYPE_WARNING);
-			
+
 			return false;
 		}
-		PacketLog.logPacket(PacketType.SERVER, p);
 		return sendBytes(p.getFull());
 	}
 

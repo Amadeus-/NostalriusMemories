@@ -20,29 +20,16 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
-import javax.swing.JTable;
 import javax.swing.JTextArea;
-import javax.swing.ListSelectionModel;
-import javax.swing.SwingConstants;
-import javax.swing.table.DefaultTableModel;
 import javax.swing.text.DefaultCaret;
 
-import bunnyEmu.main.entities.packet.Packet;
 import bunnyEmu.main.handlers.RealmHandler;
-import bunnyEmu.main.utils.PacketLog;
-import bunnyEmu.main.utils.PacketLog.PacketType;
 
 public class ServerWindow implements ActionListener {
 
 	private JFrame frame;
 	private static JTextArea textArea;
 	private static JButton replayButton;
-	private static String[][] packets;
-	private static Packet[] packetLog;
-
-	private static JTable table;
-	final static String[] headers = new String[] {"Name", "Opcode", "Size" };
-	static ArrayList<PacketType> packetLogTypes = new ArrayList<PacketType>();
 	private JPanel commandPanel;
 
 	/**
@@ -59,22 +46,6 @@ public class ServerWindow implements ActionListener {
 				}
 			}
 		});
-	}
-
-	public static void notifyChange(){
-		// A new packet has been logged, do we want to see them?
-		packetLog = PacketLog.getPackets(packetLogTypes);
-		packets = new String[packetLog.length][3];
-
-		for(int i = 0; i < packets.length; i++){
-			Packet p = packetLog[i];
-			packets[i][0] = p.sOpcode;
-			packets[i][1] = String.valueOf(Integer.toHexString(p.nOpcode).toUpperCase());
-			packets[i][2] = String.valueOf(p.size);
-		}
-
-		table.setModel(new DefaultTableModel(packets, headers));
-		table.getColumnModel().getColumn(0).setPreferredWidth(220);
 	}
 
 	/**
@@ -124,89 +95,7 @@ public class ServerWindow implements ActionListener {
 		JScrollPane scroll = new JScrollPane (textArea);
 		outputPanel.add(scroll);
 
-		/// Packets
-		JPanel packetPanel = new JPanel();
-		tabbedPane.addTab("Packets", null, packetPanel, null);
-
-		packets = new String[0][3];
-
-
-
-		table = new JTable(packets, headers);
-		table.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				int rowIndex = table.getSelectedRow();
-
-				JFrame packetFrame = new JFrame();
-				packetFrame.setBounds(100, 100, 350, 300);
-
-				JTextArea textArea = new JTextArea();
-				textArea.setFont(new Font("Tahoma", Font.PLAIN, 11));
-				textArea.setColumns(35);
-				textArea.setRows(14);
-				textArea.append(packetLog[rowIndex].toStringBeautified());
-				JScrollPane scroll = new JScrollPane (textArea);
-				packetFrame.getContentPane().add(scroll);
-
-				packetFrame.setVisible(true);
-			}
-		});
-		packetPanel.setLayout(null);
-
-
-		JScrollPane scroll2 = new JScrollPane (table);
-		scroll2.setBounds(155, 0, 400, 207);
-		scroll2.setPreferredSize(new Dimension(400, 200));
-		packetPanel.add(scroll2);
-
-		table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-		table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
-		final JCheckBox checkboxServer = new JCheckBox("Server");
-		checkboxServer.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				setPacketLogOption(PacketType.SERVER, checkboxServer.isSelected());
-			}
-		});
-		checkboxServer.setBounds(6, 36, 97, 23);
-		checkboxServer.setHorizontalAlignment(SwingConstants.LEFT);
-		packetPanel.add(checkboxServer);
-
-		final JCheckBox checkboxClientImpl = new JCheckBox("Client implemented");
-		checkboxClientImpl.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				setPacketLogOption(PacketType.CLIENT_KNOWN_IMPLEMENTED, checkboxClientImpl.isSelected());
-			}
-		});
-		checkboxClientImpl.setHorizontalAlignment(SwingConstants.LEFT);
-		checkboxClientImpl.setBounds(6, 62, 127, 23);
-		packetPanel.add(checkboxClientImpl);
-
-		final JCheckBox checkboxClientUnimpl = new JCheckBox("Client unimplemented");
-		checkboxClientUnimpl.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				setPacketLogOption(PacketType.CLIENT_KNOWN_UNIMPLEMENTED, checkboxClientUnimpl.isSelected());
-			}
-		});
-		checkboxClientUnimpl.setHorizontalAlignment(SwingConstants.LEFT);
-		checkboxClientUnimpl.setBounds(6, 88, 143, 23);
-		packetPanel.add(checkboxClientUnimpl);
-
-		final JCheckBox checkboxClientUnk = new JCheckBox("Client unknown");
-		checkboxClientUnk.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				setPacketLogOption(PacketType.CLIENT_UNKNOWN, checkboxClientUnk.isSelected());
-			}
-		});
-		checkboxClientUnk.setHorizontalAlignment(SwingConstants.LEFT);
-		checkboxClientUnk.setBounds(6, 114, 127, 23);
-		packetPanel.add(checkboxClientUnk);
-
+		// Infos tab
 		JPanel infoPanel = new JPanel();
 		tabbedPane.addTab("Info", null, infoPanel, null);
 		infoPanel.setLayout(null);
@@ -251,14 +140,6 @@ public class ServerWindow implements ActionListener {
 				}
 			}
 		}.start();
-	}
-
-	private static void setPacketLogOption(PacketType type, boolean checked){
-		if(checked && !packetLogTypes.contains(type))
-			packetLogTypes.add(type);
-		else
-			packetLogTypes.remove(type);
-		notifyChange();
 	}
 
 	public static void appendOut(String text){
