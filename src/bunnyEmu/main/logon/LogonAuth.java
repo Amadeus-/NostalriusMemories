@@ -93,23 +93,9 @@ import misc.Logger;
             in.packet.get(I, 0, username_len);                       // I  
 
             String username = new String(I);
-            
-            String[] userInfo = DatabaseHandler.queryAuth(username);
 
-            // need to return auth failed here
-            if(userInfo == null) {
-            	AuthPacket authWrongPass = new AuthPacket((short) 3);
-            	authWrongPass.put((byte) 0); // opcode
-            	authWrongPass.put((byte) 0);
-            	authWrongPass.put((byte) AuthCodes.AUTH_UNKNOWN_ACCOUNT);
-            	connection.send(authWrongPass);
-
-            	Logger.writeLog("Wrong password sent. (" + username + ")", Logger.LOG_TYPE_VERBOSE);
-
-            	return;
-            }
-
-            byte[] accountHash = DatatypeConverter.parseHexBinary(userInfo[1]);
+            // Hash of 'NOSTALRIUS:MEMORIES'
+            byte[] accountHash = DatatypeConverter.parseHexBinary("2c150ed9df82cf47252b99a75c16d76c52f6d3ff");
 
             
             System.out.println("DEBUG MESSAGE: Client version number is " + version);

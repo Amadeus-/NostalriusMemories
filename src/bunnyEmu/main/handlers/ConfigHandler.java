@@ -21,10 +21,8 @@ public class ConfigHandler {
 			return prop;
 		}
 		catch (Exception e) {
-			Logger.writeLog("Unable to load configuration file 'server.conf' from assets folder... terminating.", Logger.LOG_TYPE_VERBOSE);
-			System.exit(0);
+			Logger.writeLog("Unable to load configuration file 'server.conf' from assets folder... ignoring.", Logger.LOG_TYPE_VERBOSE);
+			return new Properties();
 		}
-
-		return null;
 	}
 }

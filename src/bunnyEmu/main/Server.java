@@ -12,7 +12,6 @@ import java.util.Properties;
 
 import javax.swing.UIManager;
 
-import bunnyEmu.main.db.DatabaseConnection;
 import bunnyEmu.main.handlers.ConfigHandler;
 import bunnyEmu.main.net.Connection;
 import bunnyEmu.main.net.LogonConnection;
@@ -39,11 +38,12 @@ public class Server {
 			Logger.printToConsole = true;
 			
 			prop = ConfigHandler.loadProperties();
-			
-			realmlist = prop.getProperty("realmlistAddress");
-			Logger.writeLog("OK: " + prop, Logger.LOG_TYPE_VERBOSE);
+			// Set default values
+			prop.setProperty("enableGUI", prop.getProperty("enableGUI", "1"));
+
+			realmlist = prop.getProperty("realmlistAddress", "127.0.0.1");
 			if (realmlist.isEmpty()) {
-				Logger.writeLog("No realmlist set in server.conf, unable to start.", Logger.LOG_TYPE_ERROR);
+				Logger.writeLog("Wrong realmlist set in server.conf, unable to start.", Logger.LOG_TYPE_ERROR);
 				System.exit(0);
 			}
 			
@@ -54,8 +54,6 @@ public class Server {
 				Thread.sleep(200);
 			}
 		} catch (Exception e) {
-
-			Logger.writeLog("NOT OK: " + prop, Logger.LOG_TYPE_VERBOSE);
 			e.printStackTrace();
 		}
 
@@ -73,17 +71,12 @@ public class Server {
 
 	private void listenSocket() {
 		try {
-			Logger.writeLog("Launched BunnyEmu - listening on " + realmlist, Logger.LOG_TYPE_VERBOSE);
+			Logger.writeLog("Launched NostalriusMemories - set your realmlist to 127.0.0.1 :)", Logger.LOG_TYPE_VERBOSE);
 			
 			InetAddress address = InetAddress.getByName(realmlist);
 			serverSocket = new ServerSocket(3724, 0, address);
-
-			/* load database connection */
-			// TODO: Some explanation how to start up the database when there isn't one?
-			DatabaseConnection.initConnectionPool(prop);
 			
-			Logger.writeLog("BunnyEmu is open-source: https://github.com/marijnz/BunnyEmu", Logger.LOG_TYPE_VERBOSE);
-			Logger.writeLog("Remember to create an account before logging in.", Logger.LOG_TYPE_VERBOSE);
+			Logger.writeLog("based on BunnyEmu: https://github.com/marijnz/BunnyEmu", Logger.LOG_TYPE_VERBOSE);
 			
 			/* console commands are handled by this thread if no GUI */
 			if (Integer.parseInt(prop.getProperty("enableGUI")) == 0) {
@@ -93,7 +86,7 @@ public class Server {
 			}
 
 		} catch (IOException e) {
-			Logger.writeLog("ERROR: port 3724 is not available!", Logger.LOG_TYPE_WARNING);
+			Logger.writeLog("Network error: unable to bind ?", Logger.LOG_TYPE_WARNING);
 		}
 		
 		try {

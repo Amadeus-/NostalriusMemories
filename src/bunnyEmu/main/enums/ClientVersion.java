@@ -27,10 +27,9 @@ public enum ClientVersion {
     	ClientVersion version = null;
     	
     	switch(clientVersion) {
-	    	case "1.1.2" : {
+	    	case "101": //?
 	    		version = ClientVersion.VERSION_VANILLA;
 				break;
-	    	}
 	    	case "2.4.3" : {
 	    		version = ClientVersion.VERSION_BC;
 				break;

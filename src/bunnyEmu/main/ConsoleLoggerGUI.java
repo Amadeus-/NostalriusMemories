@@ -51,45 +51,11 @@ public class ConsoleLoggerGUI implements Runnable {
 				}
 
 				if (command.equals("commands") || command.equals("help")) {
-					textArea.append("Available commands are: {'create', 'online', 'shutdown', 'help', 'commands'}.\n");
+					textArea.append("Available commands are: {'shutdown', 'help', 'commands'}.\n");
 				}
 				else if (command.equals("shutdown")) {
 					textArea.append("\n!!!Console shutdown imminent!!!\n");
 					System.exit(0);
-				}
-				else if (command.equals("online")) {
-					textArea.append("This command is not completely implemented yet.\n");
-					//System.out.print("These accounts are online: ");
-					//DatabaseHandler.queryOnline();
-					//System.out.print("\n");
-				}
-				else if (command.contains("create")) {
-					String[] accountInfo = command.split(" ");
-					
-					if (accountInfo.length != 3) {
-						textArea.append("Usage for this command is: create account password\n");
-						command="";
-						continue;
-					}
-					
-					/* get userName and hashPW here and then insert into database */
-					String userName = accountInfo[1];
-					
-					if (userName.isEmpty()) {
-						textArea.append("Username cannot be empty!\n");
-						continue;
-					}
-					
-					String hashPW = HashHelper.generatePasswordHash(accountInfo);
-					
-					Boolean result = DatabaseHandler.createAccount(userName, hashPW);
-					
-					if (result) {
-						textArea.append("Account: " + userName + " created successfully!\n");
-					}
-					else {
-						textArea.append("Failed to create: " + userName + ". Name is probably already taken.\n");
-					}
 				}
 				else {
 					textArea.append("Unrecognized command. Try typing 'help'.\n");
