@@ -55,7 +55,7 @@ public class Realm extends Thread {
 	 */
 	public Realm(int id, String name, String address, int port, ClientVersion version) {
 		this.id = id;
-		this.name = "[" + version + "]" + name ;
+		this.name = name;
 		this.address = address + ":" + String.valueOf(port);
 		this.port = port;
 		this.version = version;
@@ -75,7 +75,7 @@ public class Realm extends Thread {
 	 * @return The size of the realm, only used for the realmlist packet.
 	 */
 	public int getSize() {
-		return 8 + 4 + address.length() + name.length();
+		return 8 + 4 + (address.length() + 1) + (name.length() + 1);
 	}
 
 	@Override
