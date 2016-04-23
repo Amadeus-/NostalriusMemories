@@ -170,15 +170,11 @@ public class WorldConnection extends Connection{
     		Logger.writeLog(p.toString(), Logger.LOG_TYPE_ERROR);
     		return false;
     	}
-    	p.setHeader(encode(p.size, p.nOpcode));
-
-    	Logger.writeLog("Sending packet: " + p.sOpcode + "  0x" + Integer.toHexString(p.nOpcode).toUpperCase() + "(" + p.size + ") " + p.packetAsHex(), Logger.LOG_TYPE_VERBOSE);
-
-    	p.position(0);
-        return super.sendPacket(p);
+    	return sendRaw(p);
     }
 
     public boolean sendRaw(ServerPacket p){
+    	Logger.writeLog("Sending packet: " + p.sOpcode + "  0x" + Integer.toHexString(p.nOpcode).toUpperCase() + "(" + p.size + ") " + p.packetAsHex(), Logger.LOG_TYPE_VERBOSE);
     	p.setHeader(encode(p.size, p.nOpcode));
     	p.position(0);
         return super.sendPacket(p);

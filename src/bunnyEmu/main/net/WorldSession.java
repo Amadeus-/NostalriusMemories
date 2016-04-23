@@ -61,14 +61,15 @@ public class WorldSession {
 		if (header.length != 2) {
 			Logger.writeLog("Wrong packet header: \"" + parts[0] + "\"", Logger.LOG_TYPE_ERROR);
 		}
-		ServerPacket pkt = new ServerPacket("Nopenope", Integer.parseInt(header[1]));
+		ServerPacket pkt = new ServerPacket("[SERIALIZED]", Integer.parseInt(header[1]));
 		pkt.nOpcode = (short) Integer.parseInt(header[0]);
 		for (String b: body) {
 			int value = Integer.parseInt(b);
 			if (value > 0xFF)
 				break;
-			if (value > 0x7F) // Negative
-				value -= 0xFF;
+			if ((value & 0x80) != 0) // Negative - Java does not support unsigned types...
+				value = -0x80 + (value & 0x7F);
+				
 			pkt.put((byte)value);
 		}
 		connection.sendRaw(pkt);
@@ -194,37 +195,54 @@ public class WorldSession {
 		
 		if (character == null) { 
 			Logger.writeLog("\nPROBLEM: Character is null at login to world..\n", Logger.LOG_TYPE_WARNING);
+			return;
 		}
-		
-		connection.send(new SMSG_LOGIN_VERIFY_WORLD(character));
-		connection.send(new SMSG_KNOWN_SPELLS(character));
-		character.setCharSpeed(15);
-		
-		// Set the update fields, required for update packets
-		character.setUpdateFields(realm);
 
-		// TODO: Make the update packets working for the other versions besides MoP, 
-		// it currently works with dummy packets.
-		// Currently only fully supports MoP
-		if (realm.getVersion() == ClientVersion.VERSION_BC || realm.getVersion() == ClientVersion.VERSION_VANILLA)
-			connection.send(realm.loadPacket("updatepacket_bc", 5000));
-		else if (realm.getVersion() == ClientVersion.VERSION_WOTLK)
-			//connection.send(realm.loadPacket("updatepacket_wotlk", 8000));
-			connection.send(new SMSG_UPDATE_OBJECT_CREATE(this.connection.getClient(), true));
-		else if (realm.getVersion() == ClientVersion.VERSION_CATA)
-			connection.send(realm.loadPacket("updatepacket_cata", 500));
-		else
-			connection.send(new SMSG_UPDATE_OBJECT_CREATE(this.connection.getClient(), true));
-			//connection.send(realm.loadPacket("updatepacket_mop", 500));
-		
-		
-		//connection.send(new SMSG_MOVE_SET_CANFLY(character));
+		String[] login_packets =
+			{
+				"311:5|0 228 20 0 0 256",
+				"295:5|2 16 0 0 0 256",
+				"587:26|198 0 0 0 175 145 4 0 0 0 0 0 0 1 0 0 0 175 145 4 0 0 0 0 0 0 256",
+				"295:5|2 16 64 0 0 256",
+				"587:26|78 9 0 0 175 145 4 0 0 0 0 0 0 1 0 0 0 175 145 4 0 0 0 0 0 0 256",
+				"295:5|2 16 64 8 0 256",
+				"587:26|145 19 0 0 175 145 4 0 0 0 0 0 0 1 0 0 0 175 145 4 0 0 0 0 0 0 256",
+				"295:5|4 2 0 0 0 256",
+				"587:26|118 35 0 0 175 145 4 0 0 0 0 0 0 1 0 0 0 175 145 4 0 0 0 0 0 0 256",
+				"295:5|4 3 0 0 0 256",
+				"587:26|165 35 0 0 175 145 4 0 0 0 0 0 0 1 0 0 0 175 145 4 0 0 0 0 0 0 256",
+				"587:26|117 80 0 0 175 145 4 0 0 0 0 0 0 1 0 0 0 175 145 4 0 0 0 0 0 0 256",
+				"587:26|118 80 0 0 175 145 4 0 0 0 0 0 0 1 0 0 0 175 145 4 0 0 0 0 0 0 256",
+				"587:26|119 80 0 0 175 145 4 0 0 0 0 0 0 1 0 0 0 175 145 4 0 0 0 0 0 0 256",
+				"587:26|128 81 0 0 175 145 4 0 0 0 0 0 0 1 0 0 0 175 145 4 0 0 0 0 0 0 256",
+				"334:0|256",
+				"311:5|0 152 58 0 0 256",
+				"334:0|256",
+				"566:20|0 0 0 0 82 190 11 198 188 52 255 194 7 255 166 66 67 255 188 62 256",
+				"566:20|0 0 0 0 205 215 11 198 53 126 4 195 249 15 167 66 0 0 0 0 256",
+				"521:128|0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 256"
+				,"542:4|0 0 0 0 256"
+				,"341:20|205 215 11 198 53 126 4 195 249 15 167 66 0 0 0 0 12 0 0 0 256"
+				,"253:32|255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 255 256"
+				,"298:145|0 35 0 155 19 0 0 198 0 0 0 73 2 0 0 118 35 0 0 203 0 0 0 204 0 0 0 128 81 0 0 187 28 0 0 11 86 0 0 147 84 0 0 26 89 0 0 148 84 0 0 203 25 0 0 165 35 0 0 89 24 0 0 78 9 0 0 102 24 0 0 103 24 0 0 81 0 0 0 37 13 0 0 194 32 0 0 156 2 0 0 77 25 0 0 78 25 0 0 2 8 0 0 98 28 0 0 99 28 0 0 10 2 0 0 117 80 0 0 118 80 0 0 119 80 0 0 120 80 0 0 234 11 0 0 175 9 0 0 145 19 0 0 0 0 256"
+				,"290:324|64 0 0 0 2 0 0 0 0 0 0 0 0 0 2 0 0 0 0 2 0 0 0 0 16 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 16 0 0 0 0 0 0 0 0 0 8 0 0 0 0 9 0 0 0 0 14 0 0 0 0 0 0 0 0 0 6 0 0 0 0 6 0 0 0 0 6 0 0 0 0 6 0 0 0 0 17 0 0 0 0 17 0 0 0 0 17 0 0 0 0 17 0 0 0 0 4 0 0 0 0 4 0 0 0 0 4 0 0 0 0 4 0 0 0 0 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 0 0 0 0 4 0 0 0 0 4 0 0 0 0 4 0 0 0 0 4 0 0 0 0 4 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 20 0 0 0 0 16 0 0 0 0 2 0 0 0 0 0 0 0 0 0 16 0 0 0 0 16 0 0 0 0 16 0 0 0 0 6 0 0 0 0 24 0 0 0 0 14 0 0 0 0 0 0 0 0 0 16 0 0 0 0 16 0 0 0 0 2 0 0 0 0 16 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 256"
+				,"66:8|213 177 53 16 138 136 136 60 256"
+				,"297:480|203 25 0 0 73 2 0 0 2 8 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 159 0 0 128 22 8 0 " +
+					"128 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 " +
+					"0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 " +
+					"0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 " +
+					"0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 " +
+					"0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 " +
+					"0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 " +
+					"0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 256"
+				,"502:453|49 4 0 0 120 218 117 83 61 75 3 65 16 157 189 187 196 68 139 164 136 145 160 98 192 32 10 17 226 71 68 36 152 213 206 223 96 17 16 11 11 35 4 196 70 144 116 87 216 68 68 44 20 34 54 54 130 101 218 67 65 108 132 32 130 133 133 41 36 4 9 33 132 52 130 160 51 183 123 178 228 46 3 239 118 103 118 222 237 204 238 219 32 160 105 230 215 97 149 179 48 163 121 110 13 108 195 16 13 92 199 79 218 142 20 179 119 39 6 16 236 68 179 222 67 178 0 234 10 233 101 196 77 154 148 208 204 134 155 220 80 200 139 30 59 198 36 52 179 233 46 183 169 144 23 60 203 109 185 119 108 41 164 132 7 41 34 161 153 109 149 204 236 212 182 66 46 247 144 125 232 253 162 105 102 199 77 236 40 196 104 160 31 177 171 18 227 54 177 171 150 59 234 46 151 160 15 160 103 20 104 113 254 145 193 243 219 208 99 250 200 120 248 14 221 172 195 191 197 57 64 13 81 226 133 177 115 78 126 45 180 193 137 62 51 12 214 254 184 37 218 193 93 173 15 227 62 148 137 1 247 131 98 44 12 16 6 166 70 196 145 100 32 5 109 29 188 172 86 201 123 47 244 177 226 142 161 122 89 250 166 132 67 253 198 100 152 238 250 10 177 45 239 157 230 13 93 248 142 226 24 158 42 158 115 224 7 127 18 148 241 221 1 128 170 68 224 246 114 21 91 205 206 97 156 176 247 30 229 149 252 49 135 150 216 35 162 72 33 42 69 56 75 121 136 9 74 153 6 24 4 129 74 126 20 185 155 156 238 85 15 250 53 186 191 180 124 13 139 178 198 132 242 188 156 23 227 136 223 209 177 35 77 71 101 142 104 28 13 148 176 137 37 187 23 146 140 15 150 237 57 131 156 140 109 225 152 100 73 118 45 253 79 57 150 153 200 163 194 94 67 103 124 229 224 130 79 61 157 114 82 133 56 230 62 224 66 152 127 118 232 178 78 256"
+			};
+		for (String l: login_packets)
+			SendSerializedPacket(l);
 
-		sendAccountDataTimes(0xEA);
-		sendMOTD("Welcome to BunnyEmu, have fun exploring!");
-		// connection.send(new SMSG_MOVE_SET_CANFLY(character));
-		//sendSpellGo(); // Shiny start
-		//multiplayerCreation();
+		sendMOTD("Welcome to your Nostalrius Memories.");
+		sendMOTD("Support official legacy realms here:");
+		sendMOTD("https://www.change.org/p/mike-morhaime-legacy-server-among-world-of-warcraft-community");
 	}
 
 	/**

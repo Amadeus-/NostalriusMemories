@@ -208,15 +208,11 @@ public class Client {
      * @return The character that belongs to the guid, null if doesn't exist.
      */
     public Char setCurrentCharacter(long GUID) {
-    	Logger.writeLog("setting cur char with GUID " + GUID, Logger.LOG_TYPE_VERBOSE);
-    	
-    	for (Char cChar : characters) {
-    		if (cChar.getGUID() == GUID) {
-    			currentCharacter = cChar;
-    			return cChar;
-    		}
-    	}
-    	return null;
+    	Logger.writeLog("Loading hardcoded character...", Logger.LOG_TYPE_VERBOSE);
+    	currentCharacter = new Char("Remember", (float)-8949.95, (float)-132.493, (float)83.5312, (float)0, 0,
+    			(byte)0, (byte)0, (byte)0, (byte)0, (byte)0,
+    			(byte)1, (byte)5, (byte)0, 1);
+    	return currentCharacter;
     }
     
 	/**
