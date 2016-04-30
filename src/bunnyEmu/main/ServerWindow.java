@@ -1,5 +1,8 @@
 package bunnyEmu.main;
 
+import java.awt.Container;
+import java.awt.Desktop;
+import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
@@ -8,24 +11,22 @@ import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import javax.swing.text.DefaultCaret;
-
-import bunnyEmu.main.handlers.RealmHandler;
 
 public class ServerWindow implements ActionListener {
 
 	private JFrame frame;
 	private static JTextArea textArea;
 	private static JButton replayButton;
-	private JPanel commandPanel;
 
 	/**
 	 * Launch the application.
@@ -58,83 +59,64 @@ public class ServerWindow implements ActionListener {
 		frame.setTitle("Nostalrius Memories");
 		frame.setBounds(100, 100, 596, 319);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.getContentPane().setLayout(null);
-
-		JLabel lblBunnyEmu = new JLabel("Nostalrius Memories - Based on BunnyEmu");
-		lblBunnyEmu.setToolTipText("");
-		lblBunnyEmu.setBounds(10, 10, 207, 14);
-		frame.getContentPane().add(lblBunnyEmu);
-
-		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
-		tabbedPane.setBounds(10, 35, 560, 235);
-		frame.getContentPane().add(tabbedPane);
-
-		/// Output
-		JPanel outputPanel = new JPanel();
-		outputPanel.setToolTipText("");
-		tabbedPane.addTab("Memories", null, outputPanel, null);
+		Container panel = frame.getContentPane();
 
 		textArea = new JTextArea();
 		textArea.setFont(new Font("Tahoma", Font.PLAIN, 11));
 		textArea.setColumns(65);
 		textArea.setRows(14);
-		outputPanel.add(textArea);
 
 		replayButton = new JButton("Replay...");
 		replayButton.addActionListener(this);
-		outputPanel.add(replayButton);
 
 		DefaultCaret caret = (DefaultCaret)textArea.getCaret();
 		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 
-		JScrollPane scroll = new JScrollPane (textArea);
-		outputPanel.add(scroll);
+		JEditorPane welcomeMsg = new JEditorPane();
+		welcomeMsg.setContentType("text/html");//set content as html
+		welcomeMsg.setText("<p style='text-align:center'><a href='https://github.com/NostalriusVanilla/NostalriusMemories'>Nostalrius Memories</a> -"
+				+ " Based on <a href='https://github.com/marijnz/BunnyEmu'>BunnyEmu</a>"
+				+ "<br />"
+				+ "<table>"
+				+ "<tr>"
+				+ "<td>Instructions:"
+				+ "<ol>"
+				+ "<li>set realmlist 127.0.0.1</li>"
+				+ "<li>Login: <strong>Nostalrius</strong></li>"
+				+ "<li>Password: <strong>Memories</strong></li>"
+				+ "<li>Load your character and press 'Replay'</li>"
+				+ "</ol>"
+				+ "</td><td>"
+				+ "<a href='https://nostalrius.org/'>http://nostalrius.org/</a><br />"
+				+ "@NostalBegins "
+				+ "<a href='https://twitter.com/NostalBegins'>Twitter</a> / <a href='https://www.facebook.com/NostalBegins'>Facebook</a><br />"
+				+ "<a href='https://www.change.org/p/michael-morhaime-legacy-server-among-world-of-warcraft-community'>Open letter for legacy servers</a>"
+				+ "</td></tr></table>"
+				+ "</p>");
 
-		// Infos tab
-		JPanel infoPanel = new JPanel();
-		tabbedPane.addTab("Info", null, infoPanel, null);
-		infoPanel.setLayout(null);
+		welcomeMsg.setEditable(false);//so its not editable
+		welcomeMsg.setOpaque(false);//so we dont see whit background
+		welcomeMsg.setSize(welcomeMsg.getPreferredSize());
+		welcomeMsg.addHyperlinkListener(new HyperlinkListener() {
+            @Override
+            public void hyperlinkUpdate(HyperlinkEvent hle) {
+                if (HyperlinkEvent.EventType.ACTIVATED.equals(hle.getEventType())) {
+                    System.out.println(hle.getURL());
+                    Desktop desktop = Desktop.getDesktop();
+                    try {
+                        desktop.browse(hle.getURL().toURI());
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
+            }
+        });
 
-		final JLabel memoryLabel = new JLabel("Memory usage:");
-		memoryLabel.setBounds(30, 11, 195, 22);
-		infoPanel.add(memoryLabel);
-
-		final JLabel clientsLabel = new JLabel("Clients logged in:");
-		clientsLabel.setBounds(30, 66, 195, 22);
-		infoPanel.add(clientsLabel);
-
-		commandPanel = new JPanel();
-		JTextArea commandArea = new JTextArea();
-		commandArea.setFont(new Font("Tahoma", Font.PLAIN, 11));
-		commandArea.setColumns(65);
-		commandArea.setRows(14);
-
-		DefaultCaret caret2 = (DefaultCaret)commandArea.getCaret();
-		caret2.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
-
-		JScrollPane scroll3 = new JScrollPane (commandArea);
-		commandPanel.add(scroll3);
-		tabbedPane.addTab("Command", null, commandPanel, null);
-
-		/* console commands are handled by this thread */
-		Runnable loggerRunnable = new ConsoleLoggerGUI(commandArea);
-		Thread loggerThread = new Thread(loggerRunnable);
-		loggerThread.start();
-
-		new Thread(){
-			@Override
-			public void run(){
-				while(true){
-					memoryLabel.setText("Kb memory usage: " + (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1024);
-					clientsLabel.setText("Logged in clients: " + RealmHandler.getAllClientsAllRealms().size());
-					try {
-						Thread.sleep(1000);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
-			}
-		}.start();
+		panel.setLayout(new BoxLayout(frame.getContentPane(), BoxLayout.PAGE_AXIS));
+		panel.add(welcomeMsg);
+		panel.add(replayButton);
+		panel.add(Box.createRigidArea(new Dimension(0,10)));
+		panel.add(textArea);
 	}
 
 	public static void appendOut(String text){
