@@ -3,8 +3,6 @@ package bunnyEmu.main;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
-import bunnyEmu.main.db.DatabaseHandler;
-import bunnyEmu.main.utils.crypto.HashHelper;
 import misc.Logger;
 
 /* handle console commands here */

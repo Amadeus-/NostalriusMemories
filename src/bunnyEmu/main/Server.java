@@ -19,7 +19,6 @@ import javax.swing.UIManager;
 import bunnyEmu.main.handlers.ConfigHandler;
 import bunnyEmu.main.net.Connection;
 import bunnyEmu.main.net.LogonConnection;
-import bunnyEmu.main.net.WorldConnection;
 import bunnyEmu.main.net.WorldSession;
 import misc.Logger;
 

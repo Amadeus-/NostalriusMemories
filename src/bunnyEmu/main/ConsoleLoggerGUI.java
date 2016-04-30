@@ -5,26 +5,23 @@ import java.awt.event.KeyEvent;
 
 import javax.swing.JTextArea;
 
-import bunnyEmu.main.db.DatabaseHandler;
-import bunnyEmu.main.utils.crypto.HashHelper;
-
 /**
  * Command part of the GUI
- * 
+ *
  * @author Wazy
  *
  */
 /* handle console commands here */
 public class ConsoleLoggerGUI implements Runnable {
-	
+
 	/* The ConsoleLogger output */
 	private JTextArea textArea;
 	private String command = "";
-	
+
 	public ConsoleLoggerGUI(JTextArea textArea){
 		this.textArea = textArea;
 	}
-	
+
 	public void run() {
 		textArea.append("Type commands below after >>> indicators.\n");
 		try {
@@ -45,7 +42,7 @@ public class ConsoleLoggerGUI implements Runnable {
 			while (true) {
 				textArea.append(">>> ");
 				// not ready to read anything yet
-				
+
 				while (command.isEmpty()) {
 					Thread.sleep(200);
 				}

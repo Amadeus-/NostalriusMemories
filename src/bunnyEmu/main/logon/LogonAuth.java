@@ -6,7 +6,6 @@ import java.security.NoSuchAlgorithmException;
 
 import javax.xml.bind.DatatypeConverter;
 
-import bunnyEmu.main.db.DatabaseHandler;
 import bunnyEmu.main.entities.Client;
 import bunnyEmu.main.entities.packet.AuthPacket;
 import bunnyEmu.main.entities.packet.ClientPacket;
@@ -20,7 +19,7 @@ import misc.Logger;
 //import bunnyEmu.main.utils.AuthCodes;
 
     /**
-     * 
+     *
      * Authenticates a client to the realm server
      *
      * @author Marijn
@@ -33,14 +32,14 @@ import misc.Logger;
         private static final BigNumber s = new BigNumber().setRand(32); // Salt
         private static final BigNumber k = new BigNumber("3"); // k - used to generate a lot..
         private static final BigNumber b = new BigNumber().setRand(19); // server private value
-        
+
         private BigNumber v; // Verifier
         private BigNumber gmod; // gmod - used to calculate B
         private BigNumber B; // server public value
-        
-        
+
+
         private MessageDigest md;
-        
+
         byte[] I = null; // Client name
         private LogonConnection connection;
 
@@ -52,16 +51,16 @@ import misc.Logger;
                 Logger.writeLog("Couldn't load algorithm", Logger.LOG_TYPE_WARNING);
             }
         }
-        
+
         public void serverLogonChallenge(ClientPacket in) throws IOException {
         	Logger.writeLog("serverLogonChallenge", Logger.LOG_TYPE_VERBOSE);
-            
+
             byte[]  gamename = new byte[4];	// 'WoW'
             String version = "";
             byte[]  platform = new byte[4];	// 'x86'
             byte[]  os = new byte[4];		  // 'Win'
             byte[]  country = new byte[4];	 // 'enUS'
-            
+
             in.get(gamename);                        // gamename
             version += in.get();                	// version 1
             int midVal = in.get();   				 // version 2
@@ -74,30 +73,30 @@ import misc.Logger;
             in.get(os);                                // os
             in.get(country);                           // country
             in.getInt();                               // timezone_bias
-            
+
             /* need to convert from int to dotted format here */
             int intIP = in.getInt();
-            
+
             int octet[]  = {0,0,0,0};
-            
+
             for (int i = 0; i < 4; i++) {
             	octet[i] = ((intIP >> (i*8)) & 0xFF);
             }
-            
+
             String ip = octet[3] + "." + octet[2] + "." + octet[1] + "." + octet[0];
-            
+
             Logger.writeLog("Client connecting from address: " + ip, Logger.LOG_TYPE_VERBOSE);
- 
+
             byte username_len = in.get();                 			// length of username
             I = new byte[username_len];
-            in.packet.get(I, 0, username_len);                       // I  
+            in.packet.get(I, 0, username_len);                       // I
 
             String username = new String(I);
 
             // Hash of 'NOSTALRIUS:MEMORIES'
             byte[] accountHash = DatatypeConverter.parseHexBinary("2c150ed9df82cf47252b99a75c16d76c52f6d3ff");
 
-            
+
             System.out.println("DEBUG MESSAGE: Client version number is " + version);
             try {
             	client = new Client(username, ClientVersion.versionStringToEnum(version));
@@ -105,8 +104,8 @@ import misc.Logger;
         		Logger.writeLog(e.getMessage(), Logger.LOG_TYPE_WARNING);
             }
             client.attachLogon(connection);
-            
-            
+
+
             Client existingClient = TempClientHandler.findClient(username);
             if (existingClient != null){
             	AuthPacket authWrongPass = new AuthPacket((short) 3);
@@ -118,7 +117,7 @@ import misc.Logger;
             }
 
         	RealmHandler.addVersionRealm(client.getVersion());
-        	
+
         	TempClientHandler.addTempClient(client);
 
             // Generate x - the Private key
@@ -131,7 +130,7 @@ import misc.Logger;
             v = g.modPow(x, N);
             gmod = g.modPow(b, N);
             B = (v.multiply(k).add(gmod)).remainder(N);
-            
+
             AuthPacket serverLogonChallenge = new AuthPacket((short) 119);
             serverLogonChallenge.put((byte) 0); // opcode
             serverLogonChallenge.put((byte) 0); // unk
@@ -146,7 +145,7 @@ import misc.Logger;
             serverLogonChallenge.put((byte) 0); // unk
 
             connection.send(serverLogonChallenge);
-            
+
             Logger.writeLog("send challenge", Logger.LOG_TYPE_VERBOSE);
         }
 
@@ -154,7 +153,7 @@ import misc.Logger;
             byte[] _A = new byte[32];
             byte[] _M1 = new byte[20];
             byte[] crc_hash = new byte[20];
-            
+
             Logger.writeLog("serverLogonProof", Logger.LOG_TYPE_VERBOSE);
 
             in.get(_A);
@@ -162,7 +161,7 @@ import misc.Logger;
             in.get(crc_hash);
             in.get();      // number_of_keys
             in.get();      // unk
-            
+
             // Generate u - the so called "Random scrambling parameter"
             BigNumber A = new BigNumber();
             A.setBinary(_A);
@@ -171,30 +170,30 @@ import misc.Logger;
 
             BigNumber u = new BigNumber();
             u.setBinary(md.digest());
-           
+
             // Generate S - the Session key
             BigNumber S = (A.multiply(v.modPow(u, N))).modPow(b, N);
-            
+
             // Generate vK - the hashed session key, hashed with H hash function
             byte[] t = S.asByteArray(32);
             byte[] t1 = new byte[16];
             byte[] vK = new byte[40];
 
-            for (int i = 0; i < 16; i++) 
+            for (int i = 0; i < 16; i++)
                 t1[i] = t[i * 2];
 
             md.update(t1);
 
             byte[] digest = md.digest();
-            for (int i = 0; i < 20; i++) 
+            for (int i = 0; i < 20; i++)
                 vK[i * 2] = digest[i];
 
-            for (int i = 0; i < 16; i++) 
+            for (int i = 0; i < 16; i++)
                 t1[i] = t[i * 2 + 1];
 
             md.update(t1);
             digest = md.digest();
-            for (int i = 0; i < 20; i++) 
+            for (int i = 0; i < 20; i++)
                 vK[i * 2 + 1] = digest[i];
 
             // generating M - the server's SRP6 M value
@@ -204,21 +203,21 @@ import misc.Logger;
 
             md.update(g.asByteArray(1));
             digest = md.digest();
-            for (int i = 0; i < 20; i++) 
+            for (int i = 0; i < 20; i++)
                 hash[i] ^= digest[i];
 
             md.update(I);
             byte[] t4 = new byte[20];
             t4 = md.digest();
-            
-            
+
+
             BigNumber K = new BigNumber();
             K.setBinary(vK);
             BigNumber t3 = new BigNumber();
             t3.setBinary(hash);
             BigNumber t4_correct = new BigNumber();
             t4_correct.setBinary(t4);
-            
+
             md.update(t3.asByteArray());
             md.update(t4_correct.asByteArray());
             md.update(s.asByteArray());
@@ -229,10 +228,10 @@ import misc.Logger;
             byte[] m = md.digest();
             BigNumber M = new BigNumber(m);
             BigNumber M1 = new BigNumber(_M1);
-            
+
             Logger.writeLog("M = " + M.toHexString(), Logger.LOG_TYPE_VERBOSE);
             Logger.writeLog("M1 = " + M1.toHexString(), Logger.LOG_TYPE_VERBOSE);
-            
+
             if(!M.equals(M1)) {
             	TempClientHandler.removeTempClient(client.getName());
                 client.disconnect();
@@ -240,36 +239,36 @@ import misc.Logger;
             }
 
             client.setSessionKey(K.asByteArray());
-            
+
             md.update(A.asByteArray());
-            md.update(_M1); 
+            md.update(_M1);
             md.update(K.asByteArray());
 
             short size = 32;
             if(client.getVersion() == ClientVersion.VERSION_VANILLA)
             	size = 26;
-            
+
 	        AuthPacket serverLogonAuth = new AuthPacket((short) size);
 	        serverLogonAuth.put((byte) 1); // cmd
 	        serverLogonAuth.put((byte) 0); // error
 	        serverLogonAuth.put(md.digest());
 	        // Acount flags
 	        if(client.getVersion() == ClientVersion.VERSION_VANILLA){
-	        	serverLogonAuth.putInt(0);     
+	        	serverLogonAuth.putInt(0);
         	} else {
 	        	serverLogonAuth.putInt(0x00800000);
 	  	        //  survey ID
-	  	        serverLogonAuth.putInt(0); 
+	  	        serverLogonAuth.putInt(0);
 	  	        //  unk2-3
 	  	        serverLogonAuth.putShort((short) 0);
 	        }
-	        
+
             connection.send(serverLogonAuth);
         }
-        
-        
+
+
         public void serverRealmList() throws IOException {
         	Logger.writeLog("Sending realmlist", Logger.LOG_TYPE_VERBOSE);
-            connection.send(RealmHandler.getRealmList()); 
-        }  
+            connection.send(RealmHandler.getRealmList());
+        }
     }
