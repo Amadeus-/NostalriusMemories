@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import bunnyEmu.main.Server;
+import bunnyEmu.main.ServerWindow;
 import bunnyEmu.main.entities.Client;
 import bunnyEmu.main.entities.Realm;
 import bunnyEmu.main.entities.character.Char;
@@ -242,6 +243,9 @@ public class WorldSession extends Thread {
         sendMOTD("Welcome to your Nostalrius Memories.");
         sendMOTD("Support official legacy realms here:");
         sendMOTD("https://www.change.org/p/mike-morhaime-legacy-server-among-world-of-warcraft-community");
+
+        ServerWindow.sWindow.enableReplay();
+
     }
 
     /**

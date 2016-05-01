@@ -24,6 +24,7 @@ import javax.swing.text.DefaultCaret;
 
 public class ServerWindow implements ActionListener {
 
+	public static ServerWindow sWindow;
 	private JFrame frame;
 	private static JTextArea textArea;
 	private static JButton replayButton;
@@ -35,8 +36,8 @@ public class ServerWindow implements ActionListener {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					ServerWindow window = new ServerWindow();
-					window.frame.setVisible(true);
+					sWindow = new ServerWindow();
+					sWindow.frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -66,8 +67,10 @@ public class ServerWindow implements ActionListener {
 		textArea.setColumns(65);
 		textArea.setRows(14);
 
-		replayButton = new JButton("Replay...");
+		replayButton = new JButton("Load Replay");
 		replayButton.addActionListener(this);
+		replayButton.setEnabled(false);
+		replayButton.setText("Load Replay - Login a character first");
 
 		DefaultCaret caret = (DefaultCaret)textArea.getCaret();
 		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
@@ -84,7 +87,7 @@ public class ServerWindow implements ActionListener {
 				+ "<li>set realmlist 127.0.0.1</li>"
 				+ "<li>Login: <strong>Nostalrius</strong></li>"
 				+ "<li>Password: <strong>Memories</strong></li>"
-				+ "<li>Load your character and press 'Replay'</li>"
+				+ "<li>Load your character and press 'Load Replay'</li>"
 				+ "</ol>"
 				+ "</td><td>"
 				+ "<a href='https://nostalrius.org/'>http://nostalrius.org/</a><br />"
@@ -122,6 +125,11 @@ public class ServerWindow implements ActionListener {
 	public static void appendOut(String text){
 		if(textArea != null)
 			textArea.append(text + "\n");
+	}
+
+	public void enableReplay() {
+		replayButton.setEnabled(true);
+		replayButton.setText("Load Replay");
 	}
 
 	@Override
