@@ -96,24 +96,27 @@ public class WorldConnection extends Connection{
                     Logger.writeLog("Received known packet without implementation: " + p.toString(), Logger.LOG_TYPE_WARNING);
                 }
                 lock.lock();
-                switch(p.sOpcode) {
-                    case Opcodes.MSG_TRANSFER_INITIATE:                    auth.authChallenge();                                     break; // MoP only
-                    case Opcodes.CMSG_AUTH_PROOF:                          auth.authSession((CMSG_AUTH_PROOF) p);                    break;
-                    case Opcodes.CMSG_READY_FOR_ACCOUNT_DATA_TIMES:        worldSession.sendAccountDataTimes(0x15);                break;
-                    case Opcodes.CMSG_CHAR_ENUM:                        worldSession.sendCharacters();                            break;
-                    case Opcodes.CMSG_RANDOM_NAME:                        worldSession.sendRandomName();                            break;
-                    case Opcodes.CMSG_CHAR_CREATE:                        worldSession.createCharacter((CMSG_CHAR_CREATE) p);     break;
-                    case Opcodes.CMSG_CHAR_DELETE:                        worldSession.deleteCharacter(p);                         break;
-                    case Opcodes.CMSG_PLAYER_LOGIN:                        worldSession.verifyLogin((CMSG_PLAYER_LOGIN) p);         break;
-                    case Opcodes.CMSG_PING:                                worldSession.sendPong();                                 break;
-                    case Opcodes.CMSG_NAME_QUERY:                        worldSession.sendNameResponse();                         break;
-                    case Opcodes.CMSG_NAME_CACHE:                        worldSession.handleNameCache(p);                        break; // MoP only
-                    case Opcodes.CMSG_REALM_CACHE:                         worldSession.handleRealmCache(p);                        break; // MoP only
-                    case Opcodes.CMSG_MESSAGECHAT:                         worldSession.handleChatMessage((CMSG_MESSAGECHAT)p);    break;
-                    case Opcodes.CMSG_MOVEMENT:                         worldSession.handleMovement((CMSG_MOVEMENT) p);            break;
-                    case Opcodes.CMSG_DISCONNECT:                         client.disconnect();                                     break;
+                try {
+                    switch(p.sOpcode) {
+                        case Opcodes.MSG_TRANSFER_INITIATE:                    auth.authChallenge();                                     break; // MoP only
+                        case Opcodes.CMSG_AUTH_PROOF:                          auth.authSession((CMSG_AUTH_PROOF) p);                    break;
+                        case Opcodes.CMSG_READY_FOR_ACCOUNT_DATA_TIMES:        worldSession.sendAccountDataTimes(0x15);                break;
+                        case Opcodes.CMSG_CHAR_ENUM:                        worldSession.sendCharacters();                            break;
+                        case Opcodes.CMSG_RANDOM_NAME:                        worldSession.sendRandomName();                            break;
+                        case Opcodes.CMSG_CHAR_CREATE:                        worldSession.createCharacter((CMSG_CHAR_CREATE) p);     break;
+                        case Opcodes.CMSG_CHAR_DELETE:                        worldSession.deleteCharacter(p);                         break;
+                        case Opcodes.CMSG_PLAYER_LOGIN:                        worldSession.verifyLogin((CMSG_PLAYER_LOGIN) p);         break;
+                        case Opcodes.CMSG_PING:                                worldSession.sendPong();                                 break;
+                        case Opcodes.CMSG_NAME_QUERY:                        worldSession.sendNameResponse();                         break;
+                        case Opcodes.CMSG_NAME_CACHE:                        worldSession.handleNameCache(p);                        break; // MoP only
+                        case Opcodes.CMSG_REALM_CACHE:                         worldSession.handleRealmCache(p);                        break; // MoP only
+                        case Opcodes.CMSG_MESSAGECHAT:                         worldSession.handleChatMessage((CMSG_MESSAGECHAT)p);    break;
+                        case Opcodes.CMSG_MOVEMENT:                         worldSession.handleMovement((CMSG_MOVEMENT) p);            break;
+                        case Opcodes.CMSG_DISCONNECT:                         client.disconnect();                                     break;
+                    }
+                } finally {
+                    lock.unlock();
                 }
-                lock.unlock();
             }
 
             System.out.println("World closed connection from " + clientSocket.toString());
@@ -121,7 +124,6 @@ public class WorldConnection extends Connection{
             Logger.writeLog(WorldConnection.class.getName() + " force closed", Logger.LOG_TYPE_WARNING);
             e.printStackTrace();
         } finally {
-            lock.unlock();
             // The client parent might be null if the realm authentication hasn't been completed yet
             if(client != null)
                 client.disconnectFromRealm();
