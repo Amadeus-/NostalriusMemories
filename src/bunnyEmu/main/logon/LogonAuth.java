@@ -53,23 +53,23 @@ import misc.Logger;
         }
 
         public void serverLogonChallenge(ClientPacket in) throws IOException {
-        	Logger.writeLog("serverLogonChallenge", Logger.LOG_TYPE_VERBOSE);
+            Logger.writeLog("serverLogonChallenge", Logger.LOG_TYPE_VERBOSE);
 
-            byte[]  gamename = new byte[4];	// 'WoW'
+            byte[]  gamename = new byte[4];    // 'WoW'
             String version = "";
-            byte[]  platform = new byte[4];	// 'x86'
-            byte[]  os = new byte[4];		  // 'Win'
-            byte[]  country = new byte[4];	 // 'enUS'
+            byte[]  platform = new byte[4];    // 'x86'
+            byte[]  os = new byte[4];          // 'Win'
+            byte[]  country = new byte[4];     // 'enUS'
 
             in.get(gamename);                        // gamename
-            version += in.get();                	// version 1
-            int midVal = in.get();   				 // version 2
+            version += in.get();                    // version 1
+            int midVal = in.get();                    // version 2
             if(midVal >= 10)
-            	midVal = 0;
+                midVal = 0;
             version += midVal;
-            version += in.get();                  	// version 3
-            in.getShort();                    	 	// build
-            in.get(platform);                          	// platform
+            version += in.get();                      // version 3
+            in.getShort();                             // build
+            in.get(platform);                              // platform
             in.get(os);                                // os
             in.get(country);                           // country
             in.getInt();                               // timezone_bias
@@ -80,14 +80,14 @@ import misc.Logger;
             int octet[]  = {0,0,0,0};
 
             for (int i = 0; i < 4; i++) {
-            	octet[i] = ((intIP >> (i*8)) & 0xFF);
+                octet[i] = ((intIP >> (i*8)) & 0xFF);
             }
 
             String ip = octet[3] + "." + octet[2] + "." + octet[1] + "." + octet[0];
 
             Logger.writeLog("Client connecting from address: " + ip, Logger.LOG_TYPE_VERBOSE);
 
-            byte username_len = in.get();                 			// length of username
+            byte username_len = in.get();                             // length of username
             I = new byte[username_len];
             in.packet.get(I, 0, username_len);                       // I
 
@@ -99,26 +99,18 @@ import misc.Logger;
 
             System.out.println("DEBUG MESSAGE: Client version number is " + version);
             try {
-            	client = new Client(username, ClientVersion.versionStringToEnum(version));
+                client = new Client(username, ClientVersion.versionStringToEnum(version));
             } catch (IllegalArgumentException e) {
-        		Logger.writeLog(e.getMessage(), Logger.LOG_TYPE_WARNING);
+                Logger.writeLog(e.getMessage(), Logger.LOG_TYPE_WARNING);
             }
             client.attachLogon(connection);
 
+            if (TempClientHandler.findClient(username) != null)
+                TempClientHandler.removeTempClient(username);
 
-            Client existingClient = TempClientHandler.findClient(username);
-            if (existingClient != null){
-            	AuthPacket authWrongPass = new AuthPacket((short) 3);
-            	authWrongPass.put((byte) 0); // opcode
-            	authWrongPass.put((byte) 0);
-            	authWrongPass.put((byte) AuthCodes.AUTH_ALREADY_LOGGED_IN);
-            	connection.send(authWrongPass);
-            	return;
-            }
+            RealmHandler.addVersionRealm(client.getVersion());
 
-        	RealmHandler.addVersionRealm(client.getVersion());
-
-        	TempClientHandler.addTempClient(client);
+            TempClientHandler.addTempClient(client);
 
             // Generate x - the Private key
             md.update(s.asByteArray(32));
@@ -233,7 +225,7 @@ import misc.Logger;
             Logger.writeLog("M1 = " + M1.toHexString(), Logger.LOG_TYPE_VERBOSE);
 
             if(!M.equals(M1)) {
-            	TempClientHandler.removeTempClient(client.getName());
+                TempClientHandler.removeTempClient(client.getName());
                 client.disconnect();
                 return;
             }
@@ -246,29 +238,29 @@ import misc.Logger;
 
             short size = 32;
             if(client.getVersion() == ClientVersion.VERSION_VANILLA)
-            	size = 26;
+                size = 26;
 
-	        AuthPacket serverLogonAuth = new AuthPacket((short) size);
-	        serverLogonAuth.put((byte) 1); // cmd
-	        serverLogonAuth.put((byte) 0); // error
-	        serverLogonAuth.put(md.digest());
-	        // Acount flags
-	        if(client.getVersion() == ClientVersion.VERSION_VANILLA){
-	        	serverLogonAuth.putInt(0);
-        	} else {
-	        	serverLogonAuth.putInt(0x00800000);
-	  	        //  survey ID
-	  	        serverLogonAuth.putInt(0);
-	  	        //  unk2-3
-	  	        serverLogonAuth.putShort((short) 0);
-	        }
+            AuthPacket serverLogonAuth = new AuthPacket((short) size);
+            serverLogonAuth.put((byte) 1); // cmd
+            serverLogonAuth.put((byte) 0); // error
+            serverLogonAuth.put(md.digest());
+            // Acount flags
+            if(client.getVersion() == ClientVersion.VERSION_VANILLA){
+                serverLogonAuth.putInt(0);
+            } else {
+                serverLogonAuth.putInt(0x00800000);
+                  //  survey ID
+                  serverLogonAuth.putInt(0);
+                  //  unk2-3
+                  serverLogonAuth.putShort((short) 0);
+            }
 
             connection.send(serverLogonAuth);
         }
 
 
         public void serverRealmList() throws IOException {
-        	Logger.writeLog("Sending realmlist", Logger.LOG_TYPE_VERBOSE);
+            Logger.writeLog("Sending realmlist", Logger.LOG_TYPE_VERBOSE);
             connection.send(RealmHandler.getRealmList());
         }
     }
